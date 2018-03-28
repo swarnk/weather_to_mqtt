@@ -1,0 +1,61 @@
+#!/bin/bash
+cd /root/weather
+
+#Define variables (now, first, second, third)
+NOW=$(date "+%d %b. %A")
+FIRST=$(date --date '+1 day' "+%d %b. %A")
+SECOND=$(date --date '+2 day' "+%d %b. %A")
+THIRD=$(date --date '+3 day' "+%d %b. %A")
+echo $NOW, $FIRST, $SECOND, $THIRD
+
+# Get main week news from tut.by
+NEWS=$(rsstail -1N -n 1 -u https://news.tut.by/rss/index.rss)
+
+IFS=
+report=$(curl -s "wttr.in/минск?Tnm&lang=ru")
+#Get now conditions
+NOWCONDITIONS=$(echo $report | head -n 3 | tail -n 1 | colrm 1 15 ); echo $NOWCONDITIONS
+NOWTEMP=$(echo $report | head -n 4 | tail -n 1 | colrm 1 15); echo $NOWTEMP
+image00=$(cat conditions | grep -i $NOWCONDITIONS | awk -F ":" {'print $5'} | head -n 1); echo $image00
+
+# Get +1 day conditions
+PLUSONECONDITIONS=$(echo $report | head -n 12 | tail -n 1 | cut -c 19- | sed 's/│.*//'); echo $PLUSONECONDITIONS 
+cond1trim=$(echo $PLUSONECONDITIONS | colrm 15)
+PLUSONETEMP=$(echo $report | head -n 13 | tail -n 1 | cut -c 19- | sed 's/│.*//'); echo $PLUSONETEMP
+image01=$(cat conditions | grep -i $cond1trim | awk -F ":" {'print $6'} | head -n 1); echo $image01
+
+# Get +2 days conditions
+PLUSTWOCONDITIONS=$(echo $report | head -n 22 | tail -n 1 | cut -c 19- | sed 's/│.*//'); echo $PLUSTWOCONDITIONS 
+cond2trim=$(echo $PLUSTWOCONDITIONS | colrm 15)
+PLUSTWOTEMP=$(echo $report | head -n 23 | tail -n 1 | cut -c 19- | sed 's/│.*//'); echo $PLUSTWOTEMP
+image02=$(cat conditions | grep -i $cond2trim | awk -F ":" {'print $6'} | head -n 1); echo $image02
+
+# Get +3 days conditions
+PLUSTHREECONDITIONS=$(echo $report | head -n 32 | tail -n 1 | cut -c 19- | sed 's/│.*//'); echo $PLUSTHREECONDITIONS 
+cond3trim=$(echo $PLUSTHREECONDITIONS | colrm 15)
+PLUSTHREETEMP=$(echo $report | head -n 33 | tail -n 1 | cut -c 19- | sed 's/│.*//'); echo $PLUSTHREETEMP
+image03=$(cat conditions | grep -i $cond3trim | awk -F ":" {'print $6'} | head -n 1); echo $image03
+
+convert background.png -font oswald-bold.ttf -gravity North -pointsize 40 -fill white -annotate 0 "$NOW" \
+                       -gravity center -pointsize 18 -annotate 0 "$NEWS" \
+                       -gravity southwest -pointsize 26 -annotate +20+200 "$FIRST"  \
+                       -gravity south     -annotate +0+200 "$SECOND" \
+                       -gravity southeast -annotate +20+200 "$THIRD"  \
+                       -gravity center -pointsize 44 -annotate +150-130 "$NOWTEMP \n$NOWCONDITIONS" \
+                       -gravity southwest -pointsize 26 -annotate +20+175 "$PLUSONECONDITIONS" \
+                       -gravity southwest -annotate +20+150 "$PLUSONETEMP" \
+                       -gravity south -annotate +0+175 "$PLUSTWOCONDITIONS" \
+                       -gravity southeast -annotate +20+175 "$PLUSTHREECONDITIONS"\
+                       -gravity south -annotate +0+150 "$PLUSTWOTEMP" \
+                       -gravity southeast -annotate +0+150 "$PLUSTHREETEMP"  result.png
+
+
+
+composite $image00 result.png /tmp/stamped.png
+composite -gravity South $image02 /tmp/stamped.png /tmp/sss.png
+composite -gravity SouthWest $image01 /tmp/sss.png /tmp/stamped.png
+composite -gravity SouthEast $image03 /tmp/stamped.png /tmp/sss.png
+rm /tmp/stamped.png; mv /tmp/sss.png /root/weather/weather.png; rm /root/weather/result.png
+# Publish image to mosquitto...
+mosquitto_pub -h 127.0.0.1 -t /minsk/weather -f /root/weather/weather.png
+echo $report
