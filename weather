@@ -51,11 +51,11 @@ convert background.png -font oswald-bold.ttf -gravity North -pointsize 40 -fill 
 
 
 
-composite $image00 result.png /tmp/stamped.png
-composite -gravity South $image02 /tmp/stamped.png /tmp/sss.png
-composite -gravity SouthWest $image01 /tmp/sss.png /tmp/stamped.png
-composite -gravity SouthEast $image03 /tmp/stamped.png /tmp/sss.png
+composite "$image00" result.png /tmp/stamped.png
+composite -gravity South "$image02" /tmp/stamped.png /tmp/sss.png
+composite -gravity SouthWest "$image01" /tmp/sss.png /tmp/stamped.png
+composite -gravity SouthEast "$image03" /tmp/stamped.png /tmp/sss.png
 rm /tmp/stamped.png; mv /tmp/sss.png /root/weather/weather.png; rm /root/weather/result.png
 # Publish image to mosquitto...
 mosquitto_pub -h 127.0.0.1 -t /minsk/weather -f /root/weather/weather.png
-echo $report
+echo "$report"
