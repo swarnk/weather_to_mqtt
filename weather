@@ -6,7 +6,7 @@ NOW=$(date "+%d %b. %A")
 FIRST=$(date --date '+1 day' "+%d %b. %A")
 SECOND=$(date --date '+2 day' "+%d %b. %A")
 THIRD=$(date --date '+3 day' "+%d %b. %A")
-echo $NOW, $FIRST, $SECOND, $THIRD
+#echo $NOW, $FIRST, $SECOND, $THIRD
 
 # Get main week news from tut.by
 NEWS=$(rsstail -1N -n 1 -u https://news.tut.by/rss/index.rss)
